@@ -6,6 +6,7 @@ import de.aamir.foodordering.order.domain.event.OrderCancelledEvent
 import de.aamir.foodordering.order.domain.event.OrderCreatedEvent
 import de.aamir.foodordering.order.domain.event.OrderPaidEvent
 import de.aamir.foodordering.order.domain.exception.OrderDomainException
+import org.slf4j.LoggerFactory
 import java.time.Clock
 
 class OrderDomainServiceImpl(private val clock: Clock) : OrderDomainService {
@@ -15,25 +16,30 @@ class OrderDomainServiceImpl(private val clock: Clock) : OrderDomainService {
         confirmProducts(order, restaurant)
         order.validateOrder()
         order.initializeOrder()
+        log.info("Order {} is initiated for restaurant {}", order.id.value, restaurant.id.value)
         return OrderCreatedEvent(order, clock.instant())
     }
 
     override fun payOrder(order: Order): OrderPaidEvent {
         order.pay()
+        log.info("Order {} is paid", order.id.value)
         return OrderPaidEvent(order, clock.instant())
     }
 
     override fun approveOrder(order: Order) {
         order.approve()
+        log.info("Order {} is approved", order.id.value)
     }
 
     override fun cancelOrderPayment(order: Order, failureMessages: List<String>): OrderCancelledEvent {
         order.initCancel(failureMessages)
+        log.info("Payment for order {} is being cancelled", order.id.value)
         return OrderCancelledEvent(order, clock.instant())
     }
 
     override fun cancelOrder(order: Order, failureMessages: List<String>) {
         order.cancel(failureMessages)
+        log.info("Order {} is cancelled", order.id.value)
     }
 
     private fun validateRestaurant(order: Order, restaurant: Restaurant) {
@@ -60,5 +66,9 @@ class OrderDomainServiceImpl(private val clock: Clock) : OrderDomainService {
             }
             item.confirmProduct(menuProduct)
         }
+    }
+
+    private companion object {
+        private val log = LoggerFactory.getLogger(OrderDomainServiceImpl::class.java)
     }
 }
