@@ -9,4 +9,5 @@ class Product(
     id: ProductId,
     val name: String,
     val price: Money,
+    val available: Boolean = true,
 ) : BaseEntity<ProductId>(id)

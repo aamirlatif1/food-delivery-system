@@ -34,9 +34,29 @@ class Order private constructor(
     private val _failureMessages = failureMessages.toMutableList()
     val failureMessages: List<String> get() = _failureMessages.toList()
 
-    // Price rules: every item's price equals its product's price, subTotal = price x quantity,
-    // and the order price is the sum of subtotals and > 0.
+    // Checks a new order before initializeOrder(): it is not initialized yet, its total price is > 0,
+    // and its items are priced correctly and add up to the total.
     fun validateOrder() {
+        validateInitialOrder()
+        validateTotalPrice()
+        validateItemsPrice()
+    }
+
+    private fun validateInitialOrder() {
+        if (hasId || _status != null) {
+            throw OrderDomainException("Order is not in the correct state for initialization")
+        }
+    }
+
+    private fun validateTotalPrice() {
+        if (!price.isGreaterThanZero()) {
+            throw OrderDomainException("Order price must be greater than zero, was $price")
+        }
+    }
+
+    // Every item's price equals its product's price and subTotal = price x quantity;
+    // the subtotals add up to the order price.
+    private fun validateItemsPrice() {
         if (items.isEmpty()) {
             throw OrderDomainException("Order must contain at least one item")
         }
@@ -47,9 +67,6 @@ class Order private constructor(
                         "(product price ${item.product.price}), quantity ${item.quantity} or subtotal ${item.subTotal}",
                 )
             }
-        }
-        if (!price.isGreaterThanZero()) {
-            throw OrderDomainException("Order price must be greater than zero, was $price")
         }
         val itemsTotal = items.fold(Money.ZERO) { sum, item -> sum + item.subTotal }
         if (price != itemsTotal) {

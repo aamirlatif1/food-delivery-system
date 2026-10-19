@@ -6,11 +6,14 @@ import de.aamir.foodordering.order.domain.valueobject.OrderItemId
 
 class OrderItem(
     id: OrderItemId? = null,
-    val product: Product,
+    product: Product,
     val quantity: Int,
     val price: Money,
     val subTotal: Money,
 ) : BaseEntity<OrderItemId>(id) {
+
+    var product: Product = product
+        private set
 
     fun isPriceValid(): Boolean =
         quantity > 0 && price.isGreaterThanZero() && price == product.price && subTotal == price * quantity
@@ -18,6 +21,13 @@ class OrderItem(
     // Called by Order.initializeOrder().
     internal fun initialize(id: OrderItemId) {
         this.id = id
+    }
+
+    // Called by OrderDomainService: replaces the requested product with the restaurant's
+    // product of the same id, so the item carries the menu's name and price.
+    internal fun confirmProduct(menuProduct: Product) {
+        check(menuProduct.id == product.id) { "Product ${menuProduct.id} does not match ${product.id}" }
+        product = menuProduct
     }
 
     class Builder {

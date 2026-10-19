@@ -63,6 +63,21 @@ class OrderTest {
     }
 
     @Test
+    fun `validateOrder rejects an order that is already initialized or has a status`() {
+        assertFailsWith<OrderDomainException> { order().validateOrder() }
+
+        val restored = Order.builder()
+            .customerId(CustomerId.generate())
+            .restaurantId(RestaurantId.generate())
+            .deliveryAddress(address)
+            .price(Money.of("10.00"))
+            .items(listOf(item(1, "10.00", "10.00")))
+            .status(OrderStatus.PAID)
+            .build()
+        assertFailsWith<OrderDomainException> { restored.validateOrder() }
+    }
+
+    @Test
     fun `initializeOrder twice throws`() {
         assertFailsWith<OrderDomainException> { order().initializeOrder() }
     }
