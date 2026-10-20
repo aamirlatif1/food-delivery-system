@@ -6,12 +6,15 @@ shadow = "9.4.1"
 konsist = "0.17.3"
 slf4j = "2.0.18"
 openai = "4.75.1"
+protobuf = "4.34.1"
+google-protobuf-plugin = "0.9.5"
 
 [libraries]
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 openai-java = { module = "com.openai:openai-java", version.ref = "openai" }
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -21,3 +24,4 @@ micronaut-library = { id = "io.micronaut.library", version.ref = "micronaut-grad
 micronaut-application = { id = "io.micronaut.application", version.ref = "micronaut-gradle" }
 micronaut-aot = { id = "io.micronaut.aot", version.ref = "micronaut-gradle" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+protobuf = { id = "com.google.protobuf", version.ref = "google-protobuf-plugin" }

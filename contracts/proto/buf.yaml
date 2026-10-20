@@ -1,0 +1,9 @@
+# Published language between the services (REQUIREMENTS.md §5, ADR-008).
+# CI: buf lint && buf breaking --against '.git#branch=main,subdir=contracts/proto'
+version: v2
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

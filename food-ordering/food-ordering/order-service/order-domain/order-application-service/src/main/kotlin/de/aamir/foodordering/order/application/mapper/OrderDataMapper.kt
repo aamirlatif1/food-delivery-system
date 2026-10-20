@@ -80,7 +80,7 @@ object OrderDataMapper {
             orderId = order.id.value,
             restaurantId = order.restaurantId.value,
             price = order.price.amount,
-            products = order.items.map { OrderApprovalEventProduct(it.product.id.value, it.quantity) },
+            products = order.items.map { OrderApprovalEventProduct(it.product.id.value, it.quantity, it.price.amount) },
             createdAt = event.occurredAt,
             restaurantOrderStatus = RestaurantOrderStatus.PAID,
             notes = order.notes?.let {

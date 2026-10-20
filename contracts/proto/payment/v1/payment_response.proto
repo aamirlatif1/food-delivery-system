@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "common/v1/money.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.payment.v1";
+
+// payment-service -> order-service on payment-response-topic, keyed by order_id.
+message PaymentResponse {
+  string saga_id = 1;
+  string order_id = 2;
+  string payment_id = 3;
+  string customer_id = 4;
+  common.v1.Money price = 5;
+  google.protobuf.Timestamp created_at = 6;
+  PaymentStatus payment_status = 7;
+  repeated string failure_messages = 8;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_COMPLETED = 1;
+  PAYMENT_STATUS_CANCELLED = 2;
+  PAYMENT_STATUS_FAILED = 3;
+}

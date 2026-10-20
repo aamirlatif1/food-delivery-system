@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package restaurant.v1;
+
+import "common/v1/money.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.restaurant.v1";
+
+// restaurant-service -> order-service on restaurant-topic, keyed by restaurant_id.
+// A full snapshot of the restaurant's menu; consumers upsert it and keep the higher version.
+message RestaurantChanged {
+  string restaurant_id = 1;
+  bool active = 2;
+  repeated RestaurantProduct products = 3;
+  int64 version = 4;
+  google.protobuf.Timestamp changed_at = 5;
+}
+
+message RestaurantProduct {
+  string product_id = 1;
+  string name = 2;
+  common.v1.Money price = 3;
+  bool available = 4;
+}

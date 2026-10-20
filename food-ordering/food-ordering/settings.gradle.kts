@@ -6,6 +6,10 @@ rootProject.name = "food-ordering"
 
 include(
     "common:common-domain",
+    "kafka:kafka-config-data",
+    "kafka:kafka-model",
+    "kafka:kafka-producer",
+    "kafka:kafka-consumer",
     "order-service:order-domain:core-domain",
     "order-service:order-domain:order-application-service",
     "order-service:order-application",

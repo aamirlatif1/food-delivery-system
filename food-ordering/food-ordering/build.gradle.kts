@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.micronaut.application) apply false
     alias(libs.plugins.micronaut.aot) apply false
     alias(libs.plugins.shadow) apply false
+    alias(libs.plugins.protobuf) apply false
 }
 
 allprojects {

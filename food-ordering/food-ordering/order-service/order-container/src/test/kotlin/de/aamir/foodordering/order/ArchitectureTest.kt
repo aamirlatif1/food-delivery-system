@@ -46,6 +46,20 @@ class ArchitectureTest {
     }
 
     @Test
+    fun `only the messaging adapter talks to Kafka`() {
+        Konsist.scopeFromModule("order-service")
+            .files
+            .filterNot { it.path.contains("/order-service/order-messaging/") }
+            .assertFalse { file ->
+                file.imports.any {
+                    it.name.startsWith("io.micronaut.configuration.kafka.") ||
+                        it.name.startsWith("org.apache.kafka.") ||
+                        it.name.startsWith("de.aamir.foodordering.kafka.")
+                }
+            }
+    }
+
+    @Test
     fun `only the AI adapter talks to OpenAI`() {
         Konsist.scopeFromProduction()
             .files

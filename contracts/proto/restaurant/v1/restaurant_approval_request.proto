@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package restaurant.v1;
+
+import "common/v1/money.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.restaurant.v1";
+
+// order-service -> restaurant-service on restaurant-approval-request-topic, keyed by order_id.
+// No customer id, address or delivery instructions.
+message RestaurantApprovalRequest {
+  string saga_id = 1;
+  string order_id = 2;
+  string restaurant_id = 3;
+  common.v1.Money price = 4;
+  repeated OrderProduct products = 5;
+  google.protobuf.Timestamp created_at = 6;
+  RestaurantOrderStatus restaurant_order_status = 7;
+  // Unset when the customer left no notes.
+  OrderNotes notes = 8;
+}
+
+message OrderProduct {
+  string product_id = 1;
+  int32 quantity = 2;
+  // Unit price the order was placed at; the restaurant rejects the order if it no longer matches.
+  common.v1.Money price = 3;
+}
+
+// The kitchen's part of the order notes. text is included because staff must read it when
+// requires_staff_review is set.
+message OrderNotes {
+  string text = 1;
+  repeated string allergies = 2;
+  repeated DietaryPreference dietary_preferences = 3;
+  repeated ItemInstruction item_instructions = 4;
+  SpiceLevel spice_level = 5;
+  bool requires_staff_review = 6;
+  repeated string review_reasons = 7;
+}
+
+message ItemInstruction {
+  string item = 1;
+  string instruction = 2;
+}
+
+enum RestaurantOrderStatus {
+  RESTAURANT_ORDER_STATUS_UNSPECIFIED = 0;
+  RESTAURANT_ORDER_STATUS_PAID = 1;
+}
+
+enum DietaryPreference {
+  DIETARY_PREFERENCE_UNSPECIFIED = 0;
+  DIETARY_PREFERENCE_VEGETARIAN = 1;
+  DIETARY_PREFERENCE_VEGAN = 2;
+  DIETARY_PREFERENCE_HALAL = 3;
+  DIETARY_PREFERENCE_KOSHER = 4;
+  DIETARY_PREFERENCE_GLUTEN_FREE = 5;
+  DIETARY_PREFERENCE_LACTOSE_FREE = 6;
+}
+
+enum SpiceLevel {
+  SPICE_LEVEL_UNSPECIFIED = 0;
+  SPICE_LEVEL_NONE = 1;
+  SPICE_LEVEL_MILD = 2;
+  SPICE_LEVEL_MEDIUM = 3;
+  SPICE_LEVEL_HOT = 4;
+}

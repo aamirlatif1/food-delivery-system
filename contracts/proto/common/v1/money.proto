@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package common.v1;
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.common.v1";
+
+// An amount in minor units (cents), never floating point.
+message Money {
+  int64 amount_minor = 1;
+  // ISO 4217, e.g. "EUR".
+  string currency_code = 2;
+}

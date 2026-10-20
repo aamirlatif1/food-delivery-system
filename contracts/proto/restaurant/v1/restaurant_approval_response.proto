@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package restaurant.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.restaurant.v1";
+
+// restaurant-service -> order-service on restaurant-approval-response-topic, keyed by order_id.
+message RestaurantApprovalResponse {
+  string saga_id = 1;
+  string order_id = 2;
+  string restaurant_id = 3;
+  google.protobuf.Timestamp created_at = 4;
+  OrderApprovalStatus order_approval_status = 5;
+  // Every failed rule, not only the first one.
+  repeated string failure_messages = 6;
+}
+
+enum OrderApprovalStatus {
+  ORDER_APPROVAL_STATUS_UNSPECIFIED = 0;
+  ORDER_APPROVAL_STATUS_APPROVED = 1;
+  ORDER_APPROVAL_STATUS_REJECTED = 2;
+}

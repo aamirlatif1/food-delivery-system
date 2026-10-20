@@ -19,9 +19,11 @@ data class OrderApprovalEventPayload(
     val notes: OrderApprovalEventNotes?,
 )
 
+// price is the unit price the order was placed at; the restaurant rejects the order if it changed.
 data class OrderApprovalEventProduct(
     val id: UUID,
     val quantity: Int,
+    val price: BigDecimal,
 )
 
 // The kitchen's part of the order notes. text is included because staff must read it when

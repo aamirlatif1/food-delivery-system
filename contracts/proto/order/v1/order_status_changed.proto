@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package order.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.order.v1";
+
+// order-service -> notification-service on order-status-topic (Phase 2), keyed by order_id.
+message OrderStatusChanged {
+  string order_id = 1;
+  string customer_id = 2;
+  string tracking_id = 3;
+  OrderStatus order_status = 4;
+  // Set when the order is cancelled.
+  repeated string failure_messages = 5;
+  google.protobuf.Timestamp changed_at = 6;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_PAID = 2;
+  ORDER_STATUS_APPROVED = 3;
+  ORDER_STATUS_CANCELLING = 4;
+  ORDER_STATUS_CANCELLED = 5;
+}

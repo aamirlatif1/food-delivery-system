@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "common/v1/money.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "de.aamir.foodordering.kafka.model.payment.v1";
+
+// order-service -> payment-service on payment-request-topic, keyed by order_id.
+// PENDING asks for a debit; CANCELLED asks for a refund during compensation.
+message PaymentRequest {
+  string saga_id = 1;
+  string order_id = 2;
+  string customer_id = 3;
+  common.v1.Money price = 4;
+  google.protobuf.Timestamp created_at = 5;
+  PaymentOrderStatus payment_order_status = 6;
+}
+
+enum PaymentOrderStatus {
+  PAYMENT_ORDER_STATUS_UNSPECIFIED = 0;
+  PAYMENT_ORDER_STATUS_PENDING = 1;
+  PAYMENT_ORDER_STATUS_CANCELLED = 2;
+}
