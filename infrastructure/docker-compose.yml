@@ -1,0 +1,122 @@
+# Local Kafka for the inner loop: 3 KRaft brokers (combined broker+controller),
+# topic bootstrap and Kafka UI. Values come from .env next to this file.
+#
+#   docker compose up -d
+#   docker compose down        # keeps data in ./volumes
+#
+# Inside the network: kafka-1:19092,kafka-2:19092,kafka-3:19092
+# From the host:      localhost:9092,localhost:9094,localhost:9096
+
+x-kafka-common: &kafka-common
+  image: ${KAFKA_IMAGE}
+  restart: unless-stopped
+  networks:
+    - food-delivery
+  healthcheck:
+    test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    retries: 12
+    start_period: 20s
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: ${KAFKA_TOPIC_REPLICATION_FACTOR}
+  KAFKA_MIN_INSYNC_REPLICAS: ${KAFKA_MIN_INSYNC_REPLICAS}
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS}
+
+services:
+  kafka-1:
+    <<: *kafka-common
+    container_name: kafka-1
+    hostname: kafka-1
+    ports:
+      - "${KAFKA_1_HOST_PORT}:${KAFKA_1_HOST_PORT}"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:${KAFKA_1_HOST_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:19092,PLAINTEXT_HOST://localhost:${KAFKA_1_HOST_PORT}
+    volumes:
+      - ./volumes/kafka/broker-1:/var/lib/kafka/data
+
+  kafka-2:
+    <<: *kafka-common
+    container_name: kafka-2
+    hostname: kafka-2
+    ports:
+      - "${KAFKA_2_HOST_PORT}:${KAFKA_2_HOST_PORT}"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENERS: PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:${KAFKA_2_HOST_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:19092,PLAINTEXT_HOST://localhost:${KAFKA_2_HOST_PORT}
+    volumes:
+      - ./volumes/kafka/broker-2:/var/lib/kafka/data
+
+  kafka-3:
+    <<: *kafka-common
+    container_name: kafka-3
+    hostname: kafka-3
+    ports:
+      - "${KAFKA_3_HOST_PORT}:${KAFKA_3_HOST_PORT}"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENERS: PLAINTEXT://:19092,CONTROLLER://:9093,PLAINTEXT_HOST://:${KAFKA_3_HOST_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:19092,PLAINTEXT_HOST://localhost:${KAFKA_3_HOST_PORT}
+    volumes:
+      - ./volumes/kafka/broker-3:/var/lib/kafka/data
+
+  # One-shot: creates the §5.1 topics (+ .retry/.dlq) once all brokers are healthy.
+  kafka-init-topics:
+    image: ${KAFKA_IMAGE}
+    container_name: kafka-init-topics
+    networks:
+      - food-delivery
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      KAFKA_TOPIC_PARTITIONS: ${KAFKA_TOPIC_PARTITIONS}
+      KAFKA_TOPIC_REPLICATION_FACTOR: ${KAFKA_TOPIC_REPLICATION_FACTOR}
+    volumes:
+      - ./kafka/create-topics.sh:/scripts/create-topics.sh:ro
+    entrypoint: ["bash", "/scripts/create-topics.sh"]
+    restart: "no"
+
+  kafka-ui:
+    image: ${KAFKA_UI_IMAGE}
+    container_name: kafka-ui
+    restart: unless-stopped
+    networks:
+      - food-delivery
+    ports:
+      - "${KAFKA_UI_HOST_PORT}:8080"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: food-delivery-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+networks:
+  food-delivery:
+    name: food-delivery

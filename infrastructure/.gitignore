@@ -1,0 +1,4 @@
+# Container data; keep the folder structure only
+volumes/**/*
+!volumes/**/
+!volumes/**/.gitkeep
