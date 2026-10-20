@@ -13,6 +13,12 @@ micronaut {
 }
 
 dependencies {
+    ksp("io.micronaut.validation:micronaut-validation-processor")
     api(project(":order-service:order-domain:core-domain"))
+    // api: the DTOs carry jakarta.validation constraints that adapters see too.
+    api("io.micronaut.validation:micronaut-validation")
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    implementation("io.micronaut.data:micronaut-data-tx")
+    implementation("org.slf4j:slf4j-api")
+    testRuntimeOnly(libs.slf4j.simple)
 }
