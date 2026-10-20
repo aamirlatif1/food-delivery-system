@@ -1,0 +1,49 @@
+# order-service REST API (REQUIREMENTS.md §7). Run from IntelliJ or VS Code (REST Client).
+# Prices are decimal amounts in EUR. Errors are RFC 9457 Problem Details (application/problem+json).
+
+@host = http://localhost:8080
+@customerId = 0192f0c1-0000-7000-8000-000000000003
+@restaurantId = 0192f0c1-0000-7000-8000-000000000004
+@productId = 0192f0c1-0000-7000-8000-000000000005
+
+### Create an order -> 202 with the tracking id
+# @name createOrder
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "restaurantId": "{{restaurantId}}",
+  "address": { "street": "Main Street 1", "postalCode": "10115", "city": "Berlin" },
+  "price": 50.00,
+  "items": [
+    { "productId": "{{productId}}", "quantity": 2, "price": 25.00, "subTotal": 50.00 }
+  ],
+  "notes": "No onions please, I'm allergic to peanuts. Ring twice."
+}
+
+### Track the order created above -> 200
+GET {{host}}/orders/{{createOrder.response.body.orderTrackingId}}
+
+### Unknown tracking id -> 404
+GET {{host}}/orders/00000000-0000-0000-0000-000000000000
+
+### Invalid order (no items, blank street) -> 400 with the violations
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "restaurantId": "{{restaurantId}}",
+  "address": { "street": " ", "postalCode": "10115", "city": "Berlin" },
+  "price": 50.00,
+  "items": []
+}
+
+### Preview how order notes are interpreted, without placing an order -> 200
+POST {{host}}/order-notes/interpretation
+Content-Type: application/json
+
+{
+  "notes": "Vegan, extra spicy curry, contactless delivery please"
+}

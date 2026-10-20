@@ -6,6 +6,7 @@ plugins {
 }
 
 micronaut {
+    testRuntime("junit5")
     processing {
         incremental(true)
         annotations("de.aamir.foodordering.order.*")
@@ -18,7 +19,14 @@ dependencies {
     ksp("io.micronaut.validation:micronaut-validation-processor")
     implementation(project(":order-service:order-domain:order-application-service"))
     implementation("io.micronaut:micronaut-http")
+    implementation("io.micronaut:micronaut-http-server")
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    // Errors as RFC 9457 Problem Details (application/problem+json).
+    implementation("io.micronaut.problem:micronaut-problem-json")
+    implementation("org.zalando:problem")
     implementation("io.micronaut.serde:micronaut-serde-jackson")
     implementation("io.micronaut.validation:micronaut-validation")
+    testImplementation("io.micronaut:micronaut-http-client")
+    testRuntimeOnly("io.micronaut:micronaut-http-server-netty")
+    testRuntimeOnly(libs.slf4j.simple)
 }
