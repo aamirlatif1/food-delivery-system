@@ -4,9 +4,11 @@ import de.aamir.foodordering.common.domain.valueobject.OrderApprovalStatus
 import de.aamir.foodordering.common.domain.valueobject.OrderStatus
 import de.aamir.foodordering.common.domain.valueobject.PaymentStatus
 import de.aamir.foodordering.order.application.OrderTestFixture
+import de.aamir.foodordering.order.application.dto.notes.OrderNotesInterpretation
 import de.aamir.foodordering.order.application.outbox.OutboxStatus
 import de.aamir.foodordering.order.application.outbox.model.approval.RestaurantOrderStatus
 import de.aamir.foodordering.order.application.outbox.model.payment.PaymentOrderStatus
+import de.aamir.foodordering.order.domain.valueobject.ItemInstruction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -103,5 +105,23 @@ class OrderSagaTest {
 
         assertEquals(OrderStatus.PAID, order.status)
         assertNull(fixture.paymentOutbox(sagaId).firstOrNull { it.sagaStatus == SagaStatus.FAILED })
+    }
+
+    @Test
+    fun `the restaurant approval request carries the kitchen's part of the order notes`() {
+        fixture.notesInterpreter.answer = OrderNotesInterpretation.EMPTY.copy(
+            allergies = listOf("peanuts"),
+            itemInstructions = listOf(ItemInstruction("pizza", "no onions")),
+            deliveryInstructions = "Ring twice",
+        )
+        val (order, sagaId) = fixture.createOrder(notes = "No onions, peanut allergy, ring twice")
+
+        fixture.paymentSaga.process(fixture.paymentResponse(order, sagaId, PaymentStatus.COMPLETED))
+
+        val notes = checkNotNull(fixture.approvalOutboxRepository.rows.values.single().payload.notes)
+        assertEquals("No onions, peanut allergy, ring twice", notes.text)
+        assertEquals(listOf("peanuts"), notes.allergies)
+        assertEquals(listOf(ItemInstruction("pizza", "no onions")), notes.itemInstructions)
+        assertTrue(notes.requiresStaffReview)
     }
 }

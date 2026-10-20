@@ -11,5 +11,6 @@ include(
     "order-service:order-application",
     "order-service:order-messaging",
     "order-service:order-datasource",
+    "order-service:order-ai",
     "order-service:order-container",
 )

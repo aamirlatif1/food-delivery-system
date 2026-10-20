@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":order-service:order-application"))
     implementation(project(":order-service:order-messaging"))
     implementation(project(":order-service:order-datasource"))
+    implementation(project(":order-service:order-ai"))
     implementation("io.micronaut:micronaut-management")
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
     implementation("io.micronaut.serde:micronaut-serde-jackson")

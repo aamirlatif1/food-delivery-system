@@ -1,5 +1,6 @@
 package de.aamir.foodordering.order.application.dto
 
+import de.aamir.foodordering.order.application.FakeOrderNotesInterpreter
 import de.aamir.foodordering.order.application.InMemoryApprovalOutboxRepository
 import de.aamir.foodordering.order.application.InMemoryCustomerRepository
 import de.aamir.foodordering.order.application.InMemoryOrderRepository
@@ -36,6 +37,7 @@ class CreateOrderCommandValidationTest {
             InMemoryRestaurantRepository(),
             InMemoryPaymentOutboxRepository(),
             InMemoryApprovalOutboxRepository(),
+            FakeOrderNotesInterpreter(),
         )
         .start()
     private val validator = context.getBean(Validator::class.java)
@@ -64,6 +66,7 @@ class CreateOrderCommandValidationTest {
         val item = command.items.single()
 
         assertEquals(setOf("items"), violations(command.copy(items = emptyList())))
+        assertEquals(setOf("notes"), violations(command.copy(notes = "x".repeat(1001))))
         assertEquals(
             setOf("items[0].quantity", "items[0].price", "items[0].subTotal"),
             violations(command.copy(items = listOf(item.copy(quantity = 0, price = BigDecimal("-1"), subTotal = BigDecimal.ZERO)))),

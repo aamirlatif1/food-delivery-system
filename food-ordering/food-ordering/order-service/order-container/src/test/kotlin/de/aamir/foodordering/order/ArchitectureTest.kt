@@ -11,6 +11,7 @@ class ArchitectureTest {
         "de.aamir.foodordering.order.api",
         "de.aamir.foodordering.order.messaging",
         "de.aamir.foodordering.order.datasource",
+        "de.aamir.foodordering.order.ai",
     )
 
     private fun String.isAdapter() = adapterPackages.any { startsWith(it) }
@@ -42,5 +43,13 @@ class ArchitectureTest {
         Konsist.scopeFromModule("order-service/order-domain/order-application-service")
             .files
             .assertFalse { file -> file.imports.any { it.name.isAdapter() } }
+    }
+
+    @Test
+    fun `only the AI adapter talks to OpenAI`() {
+        Konsist.scopeFromProduction()
+            .files
+            .filterNot { it.path.contains("/order-service/order-ai/") }
+            .assertFalse { file -> file.imports.any { it.name.startsWith("com.openai.") } }
     }
 }

@@ -8,6 +8,7 @@ import de.aamir.foodordering.common.domain.valueobject.ProductId
 import de.aamir.foodordering.common.domain.valueobject.RestaurantId
 import de.aamir.foodordering.order.domain.exception.OrderDomainException
 import de.aamir.foodordering.order.domain.valueobject.OrderItemId
+import de.aamir.foodordering.order.domain.valueobject.OrderNotes
 import de.aamir.foodordering.order.domain.valueobject.StreetAddress
 import de.aamir.foodordering.order.domain.valueobject.TrackingId
 import kotlin.test.Test
@@ -40,6 +41,16 @@ class OrderTest {
         assertEquals(OrderStatus.PENDING, order.status)
         assertEquals(listOf(1L, 2L), order.items.map { it.id.value })
         assertTrue(order.failureMessages.isEmpty())
+        assertEquals(null, order.notes)
+    }
+
+    @Test
+    fun `create keeps the order notes`() {
+        val notes = OrderNotes.uninterpreted("Ring twice")
+        val order = Order.create(
+            CustomerId.generate(), RestaurantId.generate(), address, Money.of("10.00"), listOf(item(1, "10.00", "10.00")), notes,
+        )
+        assertEquals(notes, order.notes)
     }
 
     @Test

@@ -6,7 +6,10 @@ import de.aamir.foodordering.common.domain.valueobject.ProductId
 import de.aamir.foodordering.common.domain.valueobject.RestaurantId
 import de.aamir.foodordering.order.application.dto.create.CreateOrderCommand
 import de.aamir.foodordering.order.application.dto.create.CreateOrderResponse
+import de.aamir.foodordering.order.application.dto.notes.OrderNotesInterpretation
+import de.aamir.foodordering.order.application.dto.notes.OrderNotesResponse
 import de.aamir.foodordering.order.application.dto.track.TrackOrderResponse
+import de.aamir.foodordering.order.application.outbox.model.approval.OrderApprovalEventNotes
 import de.aamir.foodordering.order.application.outbox.model.approval.OrderApprovalEventPayload
 import de.aamir.foodordering.order.application.outbox.model.approval.OrderApprovalEventProduct
 import de.aamir.foodordering.order.application.outbox.model.approval.RestaurantOrderStatus
@@ -19,13 +22,14 @@ import de.aamir.foodordering.order.domain.event.OrderCancelledEvent
 import de.aamir.foodordering.order.domain.event.OrderCreatedEvent
 import de.aamir.foodordering.order.domain.event.OrderEvent
 import de.aamir.foodordering.order.domain.event.OrderPaidEvent
+import de.aamir.foodordering.order.domain.valueobject.OrderNotes
 import de.aamir.foodordering.order.domain.valueobject.StreetAddress
 
 object OrderDataMapper {
 
     // The request only knows each product's id. The product name stays empty until
     // OrderDomainService replaces the product with the restaurant's menu product.
-    fun createOrderCommandToOrder(command: CreateOrderCommand): Order = Order.builder()
+    fun createOrderCommandToOrder(command: CreateOrderCommand, notes: OrderNotes?): Order = Order.builder()
         .customerId(CustomerId(command.customerId))
         .restaurantId(RestaurantId(command.restaurantId))
         .deliveryAddress(StreetAddress(command.address.street, command.address.postalCode, command.address.city))
@@ -40,13 +44,29 @@ object OrderDataMapper {
                     .build()
             },
         )
+        .notes(notes)
         .build()
 
     fun orderToCreateOrderResponse(order: Order, message: String) =
-        CreateOrderResponse(order.trackingId.value, order.status, message)
+        CreateOrderResponse(order.trackingId.value, order.status, message, order.notes?.let(::orderNotesToResponse))
 
     fun orderToTrackOrderResponse(order: Order) =
-        TrackOrderResponse(order.trackingId.value, order.status, order.failureMessages)
+        TrackOrderResponse(order.trackingId.value, order.status, order.failureMessages, order.notes?.let(::orderNotesToResponse))
+
+    fun orderNotesToResponse(notes: OrderNotes) = OrderNotesResponse(
+        text = notes.text,
+        interpretation = OrderNotesInterpretation(
+            allergies = notes.allergies,
+            dietaryPreferences = notes.dietaryPreferences,
+            itemInstructions = notes.itemInstructions,
+            spiceLevel = notes.spiceLevel,
+            deliveryInstructions = notes.deliveryInstructions,
+            contactlessDelivery = notes.contactlessDelivery,
+            requiresStaffReview = notes.requiresStaffReview,
+            reviewReasons = notes.reviewReasons,
+        ),
+        source = notes.source,
+    )
 
     fun orderCreatedEventToPaymentPayload(event: OrderCreatedEvent) =
         paymentPayload(event, PaymentOrderStatus.PENDING)
@@ -63,6 +83,17 @@ object OrderDataMapper {
             products = order.items.map { OrderApprovalEventProduct(it.product.id.value, it.quantity) },
             createdAt = event.occurredAt,
             restaurantOrderStatus = RestaurantOrderStatus.PAID,
+            notes = order.notes?.let {
+                OrderApprovalEventNotes(
+                    text = it.text,
+                    allergies = it.allergies,
+                    dietaryPreferences = it.dietaryPreferences,
+                    itemInstructions = it.itemInstructions,
+                    spiceLevel = it.spiceLevel,
+                    requiresStaffReview = it.requiresStaffReview,
+                    reviewReasons = it.reviewReasons,
+                )
+            },
         )
     }
 

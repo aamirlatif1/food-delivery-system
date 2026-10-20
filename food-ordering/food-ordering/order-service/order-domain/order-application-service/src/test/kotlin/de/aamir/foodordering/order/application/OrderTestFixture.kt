@@ -48,13 +48,16 @@ class OrderTestFixture {
     val approvalOutboxHelper = ApprovalOutboxHelper(approvalOutboxRepository, clock)
     private val sagaHelper = OrderSagaHelper(orderRepository)
 
-    val orderApplicationService = OrderApplicationServiceImpl(
+    val notesInterpreter = FakeOrderNotesInterpreter()
+    val orderNotesHelper = OrderNotesHelper(notesInterpreter)
+    private val orderCreateHelper = OrderCreateHelper(
         domainService,
         orderRepository,
         customerRepository,
         restaurantRepository,
         paymentOutboxHelper,
     )
+    val orderApplicationService = OrderApplicationServiceImpl(orderCreateHelper, orderNotesHelper, orderRepository)
     val paymentSaga = OrderPaymentSaga(domainService, sagaHelper, paymentOutboxHelper, approvalOutboxHelper)
     val approvalSaga = OrderApprovalSaga(domainService, sagaHelper, paymentOutboxHelper, approvalOutboxHelper)
 
@@ -63,17 +66,19 @@ class OrderTestFixture {
         restaurantId: UUID = this.restaurantId.value,
         productId: UUID = pizza.id.value,
         price: String = "20.00",
+        notes: String? = null,
     ) = CreateOrderCommand(
         customerId = customerId,
         restaurantId = restaurantId,
         price = BigDecimal(price),
         items = listOf(OrderItemDto(productId, quantity = 2, price = BigDecimal("10.00"), subTotal = BigDecimal("20.00"))),
         address = OrderAddressDto("Hauptstr. 1", "10115", "Berlin"),
+        notes = notes,
     )
 
     // Creates an order and returns it with the saga id of its payment outbox row.
-    fun createOrder(): Pair<Order, UUID> {
-        orderApplicationService.createOrder(createOrderCommand())
+    fun createOrder(notes: String? = null): Pair<Order, UUID> {
+        orderApplicationService.createOrder(createOrderCommand(notes = notes))
         val order = orderRepository.orders.values.last()
         return order to paymentOutboxRepository.rows.values.single { it.payload.orderId == order.id.value }.sagaId
     }

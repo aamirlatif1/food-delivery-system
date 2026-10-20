@@ -8,6 +8,7 @@ import de.aamir.foodordering.common.domain.valueobject.OrderStatus
 import de.aamir.foodordering.common.domain.valueobject.RestaurantId
 import de.aamir.foodordering.order.domain.exception.OrderDomainException
 import de.aamir.foodordering.order.domain.valueobject.OrderItemId
+import de.aamir.foodordering.order.domain.valueobject.OrderNotes
 import de.aamir.foodordering.order.domain.valueobject.StreetAddress
 import de.aamir.foodordering.order.domain.valueobject.TrackingId
 import java.util.UUID
@@ -19,6 +20,8 @@ class Order private constructor(
     val deliveryAddress: StreetAddress,
     val price: Money,
     val items: List<OrderItem>,
+    // Null when the customer wrote no notes.
+    val notes: OrderNotes?,
     trackingId: TrackingId?,
     status: OrderStatus?,
     failureMessages: List<String>,
@@ -138,12 +141,14 @@ class Order private constructor(
             deliveryAddress: StreetAddress,
             price: Money,
             items: List<OrderItem>,
+            notes: OrderNotes? = null,
         ): Order = builder()
             .customerId(customerId)
             .restaurantId(restaurantId)
             .deliveryAddress(deliveryAddress)
             .price(price)
             .items(items)
+            .notes(notes)
             .build()
             .apply {
                 validateOrder()
@@ -163,6 +168,7 @@ class Order private constructor(
         private var deliveryAddress: StreetAddress? = null
         private var price: Money? = null
         private var items: List<OrderItem>? = null
+        private var notes: OrderNotes? = null
         private var trackingId: TrackingId? = null
         private var status: OrderStatus? = null
         private var failureMessages: List<String> = emptyList()
@@ -179,6 +185,8 @@ class Order private constructor(
 
         fun items(items: List<OrderItem>) = apply { this.items = items.toList() }
 
+        fun notes(notes: OrderNotes?) = apply { this.notes = notes }
+
         fun trackingId(trackingId: TrackingId) = apply { this.trackingId = trackingId }
 
         fun status(status: OrderStatus) = apply { this.status = status }
@@ -192,6 +200,7 @@ class Order private constructor(
             deliveryAddress = checkNotNull(deliveryAddress) { "Order deliveryAddress is required" },
             price = checkNotNull(price) { "Order price is required" },
             items = checkNotNull(items) { "Order items are required" },
+            notes = notes,
             trackingId = trackingId,
             status = status,
             failureMessages = failureMessages,

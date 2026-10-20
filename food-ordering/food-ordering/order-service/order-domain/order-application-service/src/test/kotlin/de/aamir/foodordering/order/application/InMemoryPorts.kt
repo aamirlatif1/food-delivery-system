@@ -1,5 +1,8 @@
 package de.aamir.foodordering.order.application
 
+import de.aamir.foodordering.order.application.dto.notes.OrderNotesInterpretation
+import de.aamir.foodordering.order.application.exception.OrderNotesInterpretationException
+import de.aamir.foodordering.order.application.ports.output.ai.OrderNotesInterpreter
 import de.aamir.foodordering.common.domain.valueobject.CustomerId
 import de.aamir.foodordering.common.domain.valueobject.OrderId
 import de.aamir.foodordering.common.domain.valueobject.RestaurantId
@@ -141,5 +144,19 @@ class RecordingApprovalPublisher(var failing: Boolean = false) : RestaurantAppro
     override fun publish(message: OrderApprovalOutboxMessage) {
         check(!failing) { "Broker unavailable" }
         published += message
+    }
+}
+
+// Answers with the given interpretation, or throws when it is set to fail.
+class FakeOrderNotesInterpreter(
+    var answer: OrderNotesInterpretation = OrderNotesInterpretation.EMPTY,
+    var failure: OrderNotesInterpretationException? = null,
+) : OrderNotesInterpreter {
+    val received = mutableListOf<String>()
+
+    override fun interpret(notes: String): OrderNotesInterpretation {
+        received += notes
+        failure?.let { throw it }
+        return answer
     }
 }

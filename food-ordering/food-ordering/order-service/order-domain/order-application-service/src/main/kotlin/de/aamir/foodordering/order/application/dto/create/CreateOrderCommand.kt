@@ -1,5 +1,6 @@
 package de.aamir.foodordering.order.application.dto.create
 
+import de.aamir.foodordering.order.application.dto.notes.MAX_NOTES_LENGTH
 import io.micronaut.core.annotation.Introspected
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Digits
@@ -24,6 +25,9 @@ data class CreateOrderCommand(
     val items: List<@Valid OrderItemDto>,
     @field:Valid
     val address: OrderAddressDto,
+    // Free text such as "no onions, peanut allergy, ring twice"; interpreted into OrderNotes.
+    @field:Size(max = MAX_NOTES_LENGTH)
+    val notes: String? = null,
 )
 
 @Introspected
