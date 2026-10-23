@@ -9,7 +9,10 @@ import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 
 // Publishes STARTED rows and marks them COMPLETED, or FAILED on a send error (REQUIREMENTS §6.3).
-// The rows stay locked (SKIP LOCKED) until the transaction ends, so several pods can run this.
+// FAILED rows are sent again on the next run, so a broker outage delays messages but never drops
+// them. The producer retries a send for up to delivery.timeout before it fails, which spaces the
+// retries out while the broker is down. The rows stay locked (SKIP LOCKED) until the transaction
+// ends, so several pods can run this.
 @Singleton
 @Requires(property = "order-service.outbox.scheduler.enabled", notEquals = "false")
 // open: Micronaut proxies @Transactional beans, and KSP does not see the all-open plugin.
@@ -28,7 +31,11 @@ open class ApprovalOutboxScheduler(
         if (messages.isEmpty()) {
             return
         }
-        log.info("Publishing {} restaurant approval outbox messages", messages.size)
+        log.info(
+            "Publishing {} restaurant approval outbox messages, {} of them retries",
+            messages.size,
+            messages.count { it.outboxStatus == OutboxStatus.FAILED },
+        )
         messages.forEach { message ->
             val outboxStatus = try {
                 publisher.publish(message)

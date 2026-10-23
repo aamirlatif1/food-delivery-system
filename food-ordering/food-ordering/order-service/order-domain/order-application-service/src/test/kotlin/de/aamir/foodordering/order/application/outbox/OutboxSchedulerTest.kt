@@ -42,6 +42,38 @@ class OutboxSchedulerTest {
         assertEquals(OutboxStatus.FAILED, fixture.paymentOutbox(sagaId).single().outboxStatus)
     }
 
+    // REQUIREMENTS §6.3 and drill D2: a broker outage delays the message but never drops it.
+    @Test
+    fun `a FAILED row is sent again on the next run`() {
+        val publisher = RecordingPaymentPublisher(failing = true)
+        val scheduler = PaymentOutboxScheduler(fixture.paymentOutboxHelper, publisher)
+        val (_, sagaId) = fixture.createOrder()
+        scheduler.processOutboxMessages()
+
+        publisher.failing = false
+        scheduler.processOutboxMessages()
+        scheduler.processOutboxMessages()
+
+        assertEquals(listOf(sagaId), publisher.published.map { it.sagaId })
+        assertEquals(OutboxStatus.COMPLETED, fixture.paymentOutbox(sagaId).single().outboxStatus)
+    }
+
+    @Test
+    fun `a row that keeps failing stays FAILED and is tried on every run`() {
+        val publisher = RecordingApprovalPublisher(failing = true)
+        val (order, sagaId) = fixture.createOrder()
+        fixture.paymentSaga.process(fixture.paymentResponse(order, sagaId, PaymentStatus.COMPLETED))
+        val scheduler = ApprovalOutboxScheduler(fixture.approvalOutboxHelper, publisher)
+
+        scheduler.processOutboxMessages()
+        scheduler.processOutboxMessages()
+
+        val row = fixture.approvalOutboxRepository.rows.values.single()
+        assertEquals(OutboxStatus.FAILED, row.outboxStatus)
+        // Each failed run updates the row, so a concurrent publisher would lose the optimistic lock.
+        assertEquals(2, row.version)
+    }
+
     @Test
     fun `approval scheduler publishes the approval request of a paid order`() {
         val publisher = RecordingApprovalPublisher()

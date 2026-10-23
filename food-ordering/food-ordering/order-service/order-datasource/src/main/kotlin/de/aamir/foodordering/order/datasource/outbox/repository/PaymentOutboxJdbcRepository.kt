@@ -17,12 +17,12 @@ interface PaymentOutboxJdbcRepository : CrudRepository<PaymentOutboxEntity, UUID
     @Query(
         """
         SELECT * FROM payment_outbox
-        WHERE type = :type AND outbox_status = :outboxStatus AND saga_status IN (:sagaStatuses)
+        WHERE type = :type AND outbox_status IN (:outboxStatuses) AND saga_status IN (:sagaStatuses)
         ORDER BY created_at
         FOR UPDATE SKIP LOCKED
         """,
     )
-    fun findForPublishing(type: String, outboxStatus: String, sagaStatuses: Collection<String>): List<PaymentOutboxEntity>
+    fun findForPublishing(type: String, outboxStatuses: Collection<String>, sagaStatuses: Collection<String>): List<PaymentOutboxEntity>
 
     fun findByTypeAndSagaIdAndSagaStatusIn(type: String, sagaId: UUID, sagaStatus: Collection<SagaStatus>): List<PaymentOutboxEntity>
 

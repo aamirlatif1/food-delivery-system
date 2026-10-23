@@ -26,10 +26,10 @@ class PaymentOutboxRepositoryImpl(
 
     override fun findByTypeAndOutboxStatusAndSagaStatus(
         type: String,
-        outboxStatus: OutboxStatus,
+        outboxStatuses: Collection<OutboxStatus>,
         sagaStatuses: Collection<SagaStatus>,
     ): List<OrderPaymentOutboxMessage> =
-        outbox.findForPublishing(type, outboxStatus.name, sagaStatuses.map { it.name })
+        outbox.findForPublishing(type, outboxStatuses.map { it.name }, sagaStatuses.map { it.name })
             .map(mapper::entityToPaymentMessage)
 
     override fun findByTypeAndSagaIdAndSagaStatus(

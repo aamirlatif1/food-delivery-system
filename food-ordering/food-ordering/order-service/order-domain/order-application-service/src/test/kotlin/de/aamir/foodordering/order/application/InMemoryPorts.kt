@@ -70,8 +70,10 @@ abstract class InMemoryOutbox<M : Any>(
         return withVersion(message, version(message) + if (stored == null) 0 else 1).also { rows[id(it)] = it }
     }
 
-    fun find(type: String, outboxStatus: OutboxStatus, sagaStatuses: Collection<SagaStatus>): List<M> =
-        rows.values.filter { type(it) == type && outboxStatus(it) == outboxStatus && sagaStatus(it) in sagaStatuses }
+    fun find(type: String, outboxStatuses: Collection<OutboxStatus>, sagaStatuses: Collection<SagaStatus>): List<M> =
+        rows.values
+            .filter { type(it) == type && outboxStatus(it) in outboxStatuses && sagaStatus(it) in sagaStatuses }
+            .sortedBy(createdAt)
 
     fun find(type: String, sagaId: UUID, sagaStatuses: Collection<SagaStatus>): M? =
         rows.values.firstOrNull { type(it) == type && sagaId(it) == sagaId && sagaStatus(it) in sagaStatuses }
@@ -96,8 +98,8 @@ class InMemoryPaymentOutboxRepository :
         createdAt = { it.createdAt },
     ),
     PaymentOutboxRepository {
-    override fun findByTypeAndOutboxStatusAndSagaStatus(type: String, outboxStatus: OutboxStatus, sagaStatuses: Collection<SagaStatus>) =
-        find(type, outboxStatus, sagaStatuses)
+    override fun findByTypeAndOutboxStatusAndSagaStatus(type: String, outboxStatuses: Collection<OutboxStatus>, sagaStatuses: Collection<SagaStatus>) =
+        find(type, outboxStatuses, sagaStatuses)
 
     override fun findByTypeAndSagaIdAndSagaStatus(type: String, sagaId: UUID, sagaStatuses: Collection<SagaStatus>) =
         find(type, sagaId, sagaStatuses)
@@ -119,8 +121,8 @@ class InMemoryApprovalOutboxRepository :
         createdAt = { it.createdAt },
     ),
     ApprovalOutboxRepository {
-    override fun findByTypeAndOutboxStatusAndSagaStatus(type: String, outboxStatus: OutboxStatus, sagaStatuses: Collection<SagaStatus>) =
-        find(type, outboxStatus, sagaStatuses)
+    override fun findByTypeAndOutboxStatusAndSagaStatus(type: String, outboxStatuses: Collection<OutboxStatus>, sagaStatuses: Collection<SagaStatus>) =
+        find(type, outboxStatuses, sagaStatuses)
 
     override fun findByTypeAndSagaIdAndSagaStatus(type: String, sagaId: UUID, sagaStatuses: Collection<SagaStatus>) =
         find(type, sagaId, sagaStatuses)

@@ -2,6 +2,7 @@ package de.aamir.foodordering.order.application.outbox.scheduler.approval
 
 import de.aamir.foodordering.common.domain.valueobject.OrderStatus
 import de.aamir.foodordering.order.application.outbox.OutboxStatus
+import de.aamir.foodordering.order.application.outbox.UNPUBLISHED
 import de.aamir.foodordering.order.application.outbox.model.approval.OrderApprovalOutboxMessage
 import de.aamir.foodordering.order.application.outbox.model.approval.OrderApprovalEventPayload
 import de.aamir.foodordering.order.application.ports.output.repository.ApprovalOutboxRepository
@@ -21,11 +22,12 @@ class ApprovalOutboxHelper(
     fun findBySagaIdAndSagaStatus(sagaId: UUID, vararg sagaStatuses: SagaStatus): OrderApprovalOutboxMessage? =
         repository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatuses.toList())
 
-    // Approval requests go out once the order is paid (PROCESSING).
+    // Approval requests go out once the order is paid (PROCESSING). Rows whose last send failed
+    // are sent again.
     fun findUnpublished(): List<OrderApprovalOutboxMessage> =
         repository.findByTypeAndOutboxStatusAndSagaStatus(
             ORDER_SAGA_NAME,
-            OutboxStatus.STARTED,
+            UNPUBLISHED,
             listOf(SagaStatus.PROCESSING),
         )
 

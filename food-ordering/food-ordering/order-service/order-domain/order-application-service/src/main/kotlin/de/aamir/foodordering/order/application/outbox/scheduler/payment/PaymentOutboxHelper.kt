@@ -2,6 +2,7 @@ package de.aamir.foodordering.order.application.outbox.scheduler.payment
 
 import de.aamir.foodordering.common.domain.valueobject.OrderStatus
 import de.aamir.foodordering.order.application.outbox.OutboxStatus
+import de.aamir.foodordering.order.application.outbox.UNPUBLISHED
 import de.aamir.foodordering.order.application.outbox.model.payment.OrderPaymentOutboxMessage
 import de.aamir.foodordering.order.application.outbox.model.payment.OrderPaymentEventPayload
 import de.aamir.foodordering.order.application.ports.output.repository.PaymentOutboxRepository
@@ -21,11 +22,12 @@ class PaymentOutboxHelper(
     fun findBySagaIdAndSagaStatus(sagaId: UUID, vararg sagaStatuses: SagaStatus): OrderPaymentOutboxMessage? =
         repository.findByTypeAndSagaIdAndSagaStatus(ORDER_SAGA_NAME, sagaId, sagaStatuses.toList())
 
-    // Payment requests go out for a new saga (STARTED) and for a refund (COMPENSATING).
+    // Payment requests go out for a new saga (STARTED) and for a refund (COMPENSATING). Rows whose
+    // last send failed are sent again.
     fun findUnpublished(): List<OrderPaymentOutboxMessage> =
         repository.findByTypeAndOutboxStatusAndSagaStatus(
             ORDER_SAGA_NAME,
-            OutboxStatus.STARTED,
+            UNPUBLISHED,
             listOf(SagaStatus.STARTED, SagaStatus.COMPENSATING),
         )
 

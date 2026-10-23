@@ -10,10 +10,10 @@ import java.util.UUID
 interface ApprovalOutboxRepository {
     fun save(message: OrderApprovalOutboxMessage): OrderApprovalOutboxMessage
 
-    // Locks the rows it returns (FOR UPDATE SKIP LOCKED) so several pods can publish.
+    // Oldest first. Locks the rows it returns (FOR UPDATE SKIP LOCKED) so several pods can publish.
     fun findByTypeAndOutboxStatusAndSagaStatus(
         type: String,
-        outboxStatus: OutboxStatus,
+        outboxStatuses: Collection<OutboxStatus>,
         sagaStatuses: Collection<SagaStatus>,
     ): List<OrderApprovalOutboxMessage>
 

@@ -2,6 +2,7 @@ package de.aamir.foodordering.order.datasource.outbox
 
 import de.aamir.foodordering.common.domain.valueobject.OrderStatus
 import de.aamir.foodordering.order.application.outbox.OutboxStatus
+import de.aamir.foodordering.order.application.outbox.UNPUBLISHED
 import de.aamir.foodordering.order.application.saga.ORDER_SAGA_NAME
 import de.aamir.foodordering.order.application.saga.SagaStatus
 import de.aamir.foodordering.order.datasource.DataAccessFixture
@@ -47,7 +48,7 @@ class OutboxRepositoryImplTest : MySqlTest {
     @Inject
     lateinit var transactions: TransactionOperations<Connection>
 
-    private val unpublished = listOf(SagaStatus.STARTED, SagaStatus.COMPENSATING)
+    private val unpublishedSagas = listOf(SagaStatus.STARTED, SagaStatus.COMPENSATING)
 
     @BeforeEach
     fun cleanUp() {
@@ -111,21 +112,27 @@ class OutboxRepositoryImplTest : MySqlTest {
     }
 
     @Test
-    fun `publishing finds unpublished rows of the given saga statuses, oldest first`() {
+    fun `publishing finds started and failed rows of the given saga statuses, oldest first`() {
         val later = paymentOutbox.save(
-            DataAccessFixture.paymentOutboxMessage(createdAt = DataAccessFixture.createdAt.plusSeconds(1)),
+            DataAccessFixture.paymentOutboxMessage(createdAt = DataAccessFixture.createdAt.plusSeconds(2)),
         )
         val earlier = paymentOutbox.save(
             DataAccessFixture.paymentOutboxMessage(sagaStatus = SagaStatus.COMPENSATING),
+        )
+        val failed = paymentOutbox.save(
+            DataAccessFixture.paymentOutboxMessage(
+                outboxStatus = OutboxStatus.FAILED,
+                createdAt = DataAccessFixture.createdAt.plusSeconds(1),
+            ),
         )
         paymentOutbox.save(DataAccessFixture.paymentOutboxMessage(outboxStatus = OutboxStatus.COMPLETED))
         paymentOutbox.save(DataAccessFixture.paymentOutboxMessage(sagaStatus = SagaStatus.PROCESSING))
 
         val found = transactions.executeWrite {
-            paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, OutboxStatus.STARTED, unpublished)
+            paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, UNPUBLISHED, unpublishedSagas)
         }
 
-        assertEquals(listOf(earlier.id, later.id), found.map { it.id })
+        assertEquals(listOf(earlier.id, failed.id, later.id), found.map { it.id })
     }
 
     // REQUIREMENTS §6.3: several pods can run the publisher because each skips the rows another holds.
@@ -134,10 +141,10 @@ class OutboxRepositoryImplTest : MySqlTest {
         paymentOutbox.save(DataAccessFixture.paymentOutboxMessage())
 
         transactions.executeWrite {
-            val mine = paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, OutboxStatus.STARTED, unpublished)
+            val mine = paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, UNPUBLISHED, unpublishedSagas)
             val otherPod = CompletableFuture.supplyAsync {
                 transactions.executeWrite {
-                    paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, OutboxStatus.STARTED, unpublished)
+                    paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(ORDER_SAGA_NAME, UNPUBLISHED, unpublishedSagas)
                 }
             }.get(10, TimeUnit.SECONDS)
 

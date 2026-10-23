@@ -77,7 +77,7 @@ class OrderPersistenceTest : MySqlTest {
         assertEquals("PENDING", tracked["orderStatus"])
         val outboxRows = paymentOutbox.findByTypeAndOutboxStatusAndSagaStatus(
             ORDER_SAGA_NAME,
-            OutboxStatus.STARTED,
+            listOf(OutboxStatus.STARTED),
             listOf(SagaStatus.STARTED),
         ).filter { it.payload.customerId == customerId }
         assertEquals(BigDecimal("50.00"), outboxRows.single().payload.price)
