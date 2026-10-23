@@ -47,4 +47,11 @@ micronaut {
 
 tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {
     baseImage = "eclipse-temurin:25-jre"
+    // micronaut.server.port in application.properties
+    exposedPorts = listOf(8181)
+}
+
+// ./gradlew :order-service:order-container:dockerBuild, then docker compose up in infrastructure/.
+tasks.named<com.bmuschko.gradle.docker.tasks.image.DockerBuildImage>("dockerBuild") {
+    images = listOf("food-delivery/order-service:${project.version}", "food-delivery/order-service:latest")
 }

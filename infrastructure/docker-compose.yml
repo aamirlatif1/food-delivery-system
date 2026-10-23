@@ -1,12 +1,15 @@
-# Local infrastructure for the inner loop: 3 KRaft Kafka brokers (combined broker+controller),
-# topic bootstrap, Kafka UI and MySQL. Values come from .env next to this file.
+# Local stack for the inner loop: 3 KRaft Kafka brokers (combined broker+controller), topic
+# bootstrap, Kafka UI, MySQL and order-service. Values come from .env next to this file.
 #
+#   (cd ../food-ordering/food-ordering && ./gradlew :order-service:order-container:dockerBuild)
 #   docker compose up -d
+#   docker compose up -d kafka-1 kafka-2 kafka-3 kafka-init-topics kafka-ui mysql   # infra only, for ./gradlew run
 #   docker compose down        # keeps data in ./volumes
 #
 # Inside the network: kafka-1:19092,kafka-2:19092,kafka-3:19092
 # From the host:      localhost:9092,localhost:9094,localhost:9096
 # MySQL from the host: localhost:3306, database/user order_service
+# order-service:       http://localhost:8181 (see food-ordering/food-ordering/order-service/http/orders.http)
 
 x-kafka-common: &kafka-common
   image: ${KAFKA_IMAGE}
@@ -125,6 +128,35 @@ services:
     # A subfolder: mysqld only initializes an empty data directory, and ./volumes/mysql holds .gitkeep.
     volumes:
       - ./volumes/mysql/data:/var/lib/mysql
+
+  # Image from ./gradlew :order-service:order-container:dockerBuild. Flyway migrates on startup.
+  order-service:
+    image: ${ORDER_SERVICE_IMAGE}
+    container_name: order-service
+    restart: unless-stopped
+    networks:
+      - food-delivery
+    ports:
+      - "${ORDER_SERVICE_HOST_PORT}:8181"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka-init-topics:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      ORDER_DB_URL: jdbc:mysql://mysql:3306/${ORDER_DB_NAME}?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      ORDER_DB_USERNAME: ${ORDER_DB_USERNAME}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
+      # Optional: without it, order notes fall back to staff review.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    healthcheck:
+      # The JRE image has no curl or wget; bash's /dev/tcp is enough for GET /health.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8181 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   kafka-ui:
     image: ${KAFKA_UI_IMAGE}

@@ -1,7 +1,7 @@
 # order-service REST API (REQUIREMENTS.md §7). Run from IntelliJ or VS Code (REST Client).
 # Prices are decimal amounts in EUR. Errors are RFC 9457 Problem Details (application/problem+json).
 
-@host = http://localhost:8080
+@host = http://localhost:8181
 @customerId = 0192f0c1-0000-7000-8000-000000000003
 @restaurantId = 0192f0c1-0000-7000-8000-000000000004
 @productId = 0192f0c1-0000-7000-8000-000000000005
