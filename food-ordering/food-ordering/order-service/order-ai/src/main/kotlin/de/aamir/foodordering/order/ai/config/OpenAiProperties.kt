@@ -15,6 +15,11 @@ class OpenAiProperties {
     // 0 keeps the interpretation repeatable. Leave unset for models that reject temperature.
     var temperature: Double? = 0.0
     var maxCompletionTokens: Long = 800
-    var timeout: Duration = Duration.ofSeconds(15)
-    var maxRetries: Int = 1
+    // Per attempt. With the circuit breaker's one retry, a slow OpenAI adds up to 2 x timeout to
+    // POST /orders before the notes fall back to staff review.
+    var timeout: Duration = Duration.ofSeconds(8)
+
+    // The SDK's own retries. Off: the circuit breaker in OpenAiChatCompletions retries, and both
+    // together would multiply the attempts.
+    var maxRetries: Int = 0
 }

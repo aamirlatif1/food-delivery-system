@@ -1,6 +1,5 @@
 package de.aamir.foodordering.order.ai.notes
 
-import com.openai.client.OpenAIClient
 import com.openai.errors.OpenAIException
 import com.openai.models.chat.completions.ChatCompletion
 import com.openai.models.chat.completions.ChatCompletionCreateParams
@@ -15,19 +14,20 @@ import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 
 // Calls the OpenAI Chat Completions API with the system prompt, the rendered user template
-// and a strict JSON schema, then parses the answer. Notes are never logged: they can hold
+// and a strict JSON schema, then parses the answer. Every failure, an open circuit included,
+// becomes OrderNotesInterpretationException, so the order falls back to staff review. Notes are never logged: they can hold
 // personal and health data.
 @Singleton
 @Requires(condition = OpenAiApiKeyConfigured::class)
 class OpenAiOrderNotesInterpreter(
-    private val client: OpenAIClient,
+    private val chatCompletions: OpenAiChatCompletions,
     private val properties: OpenAiProperties,
 ) : OrderNotesInterpreter {
 
     override fun interpret(notes: String): OrderNotesInterpretation {
         val started = System.nanoTime()
         val completion = try {
-            client.chat().completions().create(params(notes))
+            chatCompletions.create(params(notes))
         } catch (e: OpenAIException) {
             throw OrderNotesInterpretationException("OpenAI call failed: ${e.javaClass.simpleName}", e)
         }

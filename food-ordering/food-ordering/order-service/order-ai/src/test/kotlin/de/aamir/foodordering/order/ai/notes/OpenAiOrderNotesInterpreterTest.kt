@@ -39,7 +39,7 @@ class OpenAiOrderNotesInterpreterTest {
         .baseUrl("http://127.0.0.1:${server.address.port}/v1")
         .maxRetries(0)
         .build()
-    private val interpreter = OpenAiOrderNotesInterpreter(client, properties)
+    private val interpreter = OpenAiOrderNotesInterpreter(OpenAiChatCompletions(client), properties)
 
     @AfterTest
     fun stop() {

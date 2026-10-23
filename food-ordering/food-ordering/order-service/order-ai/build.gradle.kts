@@ -15,6 +15,8 @@ micronaut {
 dependencies {
     implementation(project(":order-service:order-domain:order-application-service"))
     implementation("io.micronaut.kotlin:micronaut-kotlin-runtime")
+    // @CircuitBreaker around the OpenAI call.
+    implementation("io.micronaut:micronaut-retry")
     // Brings jackson-databind 2, which OrderNotesResponseParser uses to read the model's JSON.
     implementation(libs.openai.java)
     implementation("org.slf4j:slf4j-api")
