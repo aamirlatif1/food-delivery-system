@@ -32,4 +32,5 @@ internal fun KafkaConsumerConfigData.toProperties(): Map<String, String> = mapOf
     ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG to heartbeatInterval.toMillis().toString(),
     ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG to maxPartitionFetchBytes.toString(),
     ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG to fetchMaxWait.toMillis().toString(),
+    ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG to partitionAssignmentStrategy,
 )

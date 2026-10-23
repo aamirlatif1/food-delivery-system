@@ -16,4 +16,8 @@ class KafkaConsumerConfigData {
     var heartbeatInterval: Duration = Duration.ofSeconds(3)
     var maxPartitionFetchBytes: Int = 1_048_576
     var fetchMaxWait: Duration = Duration.ofMillis(500)
+
+    // Cooperative rebalancing: on a scale-out or rolling deploy only the partitions that move are
+    // paused, instead of every consumer in the group stopping (the eager RangeAssignor default).
+    var partitionAssignmentStrategy: String = "org.apache.kafka.clients.consumer.CooperativeStickyAssignor"
 }

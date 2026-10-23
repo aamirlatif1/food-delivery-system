@@ -23,6 +23,10 @@ class KafkaConsumerConfigTest {
         assertEquals("false", config[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG])
         assertEquals("earliest", config[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG])
         assertEquals("300000", config[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG])
+        assertEquals(
+            "org.apache.kafka.clients.consumer.CooperativeStickyAssignor",
+            config[ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG],
+        )
     }
 
     @Test
