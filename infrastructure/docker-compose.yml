@@ -158,6 +158,23 @@ services:
       retries: 12
       start_period: 30s
 
+  # One-shot: loads seed/order-service/data.sql once order-service is healthy, i.e. Flyway has
+  # created the tables. Re-run with: docker compose up order-service-seed
+  order-service-seed:
+    image: ${MYSQL_IMAGE}
+    container_name: order-service-seed
+    networks:
+      - food-delivery
+    depends_on:
+      order-service:
+        condition: service_healthy
+    environment:
+      MYSQL_PWD: ${ORDER_DB_PASSWORD}
+    volumes:
+      - ./seed/order-service/data.sql:/seed/data.sql:ro
+    entrypoint: ["sh", "-c", "mysql -h mysql -u ${ORDER_DB_USERNAME} ${ORDER_DB_NAME} < /seed/data.sql && echo 'order-service seed data loaded'"]
+    restart: "no"
+
   kafka-ui:
     image: ${KAFKA_UI_IMAGE}
     container_name: kafka-ui
