@@ -1,11 +1,12 @@
-# Local Kafka for the inner loop: 3 KRaft brokers (combined broker+controller),
-# topic bootstrap and Kafka UI. Values come from .env next to this file.
+# Local infrastructure for the inner loop: 3 KRaft Kafka brokers (combined broker+controller),
+# topic bootstrap, Kafka UI and MySQL. Values come from .env next to this file.
 #
 #   docker compose up -d
 #   docker compose down        # keeps data in ./volumes
 #
 # Inside the network: kafka-1:19092,kafka-2:19092,kafka-3:19092
 # From the host:      localhost:9092,localhost:9094,localhost:9096
+# MySQL from the host: localhost:3306, database/user order_service
 
 x-kafka-common: &kafka-common
   image: ${KAFKA_IMAGE}
@@ -100,6 +101,30 @@ services:
       - ./kafka/create-topics.sh:/scripts/create-topics.sh:ro
     entrypoint: ["bash", "/scripts/create-topics.sh"]
     restart: "no"
+
+  # One database and user per service on a shared instance (REQUIREMENTS §6.4); order only for now.
+  mysql:
+    image: ${MYSQL_IMAGE}
+    container_name: mysql
+    restart: unless-stopped
+    networks:
+      - food-delivery
+    ports:
+      - "${MYSQL_HOST_PORT}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${ORDER_DB_NAME}
+      MYSQL_USER: ${ORDER_DB_USERNAME}
+      MYSQL_PASSWORD: ${ORDER_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    # A subfolder: mysqld only initializes an empty data directory, and ./volumes/mysql holds .gitkeep.
+    volumes:
+      - ./volumes/mysql/data:/var/lib/mysql
 
   kafka-ui:
     image: ${KAFKA_UI_IMAGE}

@@ -22,6 +22,7 @@ dependencies {
     runtimeOnly("tools.jackson.module:jackson-module-kotlin")
     testImplementation("io.micronaut:micronaut-http-client")
     testImplementation(libs.konsist)
+    testImplementation(testFixtures(project(":order-service:order-datasource")))
 }
 
 application {

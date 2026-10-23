@@ -60,6 +60,17 @@ class ArchitectureTest {
     }
 
     @Test
+    fun `only the datasource adapter talks to the database`() {
+        Konsist.scopeFromModule("order-service")
+            .files
+            .filterNot { it.path.contains("/order-service/order-datasource/") }
+            .assertFalse { file ->
+                // java.sql is allowed: the messaging adapter sorts transient SQL errors for retries.
+                file.imports.any { it.name.startsWith("io.micronaut.data.") || it.name.startsWith("org.flywaydb.") }
+            }
+    }
+
+    @Test
     fun `only the AI adapter talks to OpenAI`() {
         Konsist.scopeFromProduction()
             .files

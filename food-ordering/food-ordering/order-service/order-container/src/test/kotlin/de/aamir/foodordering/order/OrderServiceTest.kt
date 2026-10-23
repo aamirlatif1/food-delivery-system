@@ -1,5 +1,6 @@
 package de.aamir.foodordering.order
 
+import de.aamir.foodordering.order.datasource.MySqlTest
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.annotation.Client
@@ -7,11 +8,14 @@ import io.micronaut.runtime.EmbeddedApplication
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+// Starts against a real MySQL, so Flyway and the repository beans are part of the check.
 @MicronautTest
-class OrderServiceTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class OrderServiceTest : MySqlTest {
 
     @Inject
     lateinit var application: EmbeddedApplication<*>
